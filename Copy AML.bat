@@ -1,0 +1,1 @@
+copy "Y:\Tech Services Dept\Working\AML Test - Darryl\References\JavaScripts for Acrobat\AML Utilities.js" "C:\Documents and Settings\%username%\Application Data\Adobe\Acrobat\8.0\JavaScripts\AML Utilities.js"
