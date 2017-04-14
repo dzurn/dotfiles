@@ -21,6 +21,7 @@
 # (That's what all the
 # {{{ and # }}} are for.)
 #
+# Modified 2017-04-14 D. Zurn: Added to GIT repository
 # Modified 2017-03-16 D. Zurn: Handle Agile numbers correctly for AMLART and ARTFILES functions
 # Modified 2016-11-02 D. Zurn: Updated OPENART to allow Agile PN format
 # Modified 2016-09-14 D. Zurn: Changed AMLtoOpen spelling
