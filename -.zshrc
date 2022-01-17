@@ -21,11 +21,10 @@
 # (That's what all the
 # {{{ and # }}} are for.)
 #
-# Modified 2017-04-14 D. Zurn: Added to GIT repository
-# Modified 2017-03-16 D. Zurn: Handle Agile numbers correctly for AMLART and ARTFILES functions
-# Modified 2016-11-02 D. Zurn: Updated OPENART to allow Agile PN format
-# Modified 2016-09-14 D. Zurn: Changed AMLtoOpen spelling
-# Modified 2016-07-07 D. Zurn: Consolidated $OSTYPE network share locations to top of variables
+# FIXME: figure out directory completion test in a script for function WICO
+# FIXME: Create a unified version for both Cygwin and Mac paths.
+#
+# Modified 2022-01-09 D. Zurn: Yay, MacBook! Added Sublime alias
 # Modified 2015-08-20 D. Zurn: Promoted Portable version to .zshrc cross-platform
 #                              Massive change to use $OSTYPE for correct path to network shares.
 # Modified 2015-07-28 D. Zurn: New version for Cygwin and Mac OS portability
@@ -91,18 +90,12 @@ function zshrc_load_status () {
 
 # }}}
 
-# Modified 2016-07-07 D. Zurn: Adding global variables for platform-specific status and network share drive locations
-if   [[ $OSTYPE = cygwin ]] ;
+if [[ $OSTYPE = cygwin ]] ;
 then
-	myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
-	myDocControl="/cygdrive/w/Medical/MPAU2/Document Control"
-	myTSP="/cygdrive/w/Medical/MPAU/Tech Services Public"
-	zshrc_load_status 'Cygwin'
+	zshrc_load_status 'cygwin'
+	myFiles="/cygdrive/w/Medical/" 
 elif [[ $OSTYPE =~ ^darwin ]] ;
 then
-	myTSD="/Volumes/Tech Services Dept"
-	myDocControl="/Volumes/Document Control"
-	myTSP="/Volumes/Tech Services Public"
 	zshrc_load_status 'Darwin'
 fi
 
@@ -111,10 +104,10 @@ zshrc_load_status 'setting options'
 # Modified 2010-08-20 D. Zurn: If path is a directory, CD to there, otherwise to the parent. Enhanced error msg.
 # Modified 2010-03-30 D. Zurn: Allow backslashes as well as colons
 # Modified 2010-02-24 D. Zurn: Added DiskTracker CD command
-#   Input is            "Tech Services Dept:Working:Work Instructions: ... :PC-2906-24C_Rev100:ARTPC-2906-24C_Rev100.pdf"
-#   cd goes to "/Volumes/Tech Services Dept/Working/Work Instructions/ ... /PC-2906-24C_Rev100/"
-#   zsh p41:  "${name//pattern/repl}"  Replace the longest possible match of "pattern" by string "repl", all occurrences
-#   zsh p37:  ":h" Removes a trailing pathname component, leaving the head. This works like ëdirnameí.
+# Input is            "Tech Services Dept:Working:Work Instructions: ... :PC-2906-24C_Rev100:ARTPC-2906-24C_Rev100.pdf"
+# cd goes to "/Volumes/Tech Services Dept/Working/Work Instructions/ ... /PC-2906-24C_Rev100/"
+# zsh p41:  "${name//pattern/repl}"  Replace the longest possible match of "pattern" by string "repl", all occurrences
+# zsh p37:  ":h" Removes a trailing pathname component, leaving the head. This works like ëdirnameí.
 function dt () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
 
@@ -251,7 +244,7 @@ export MANPATH="/usr/local/man:/sw/share/man:/usr/share/man:/usr/local/share/man
 
 # Added 2008-09-23 cdpath
 # Modified 2015-08-10 Removed MACTODOS
-cdpath=(. ~/Documents /Volumes/RGAFAML/LOFTWARE "/Volumes/Tech Services Dept/Working/Work Instructions/AML - Approved Master Label/")
+cdpath=(. ~/Documents )
 export cdpath
 
 # }}}
@@ -259,6 +252,9 @@ export cdpath
 # {{{ Aliases
 
 zshrc_load_status 'defining aliases'
+
+# Added 2022-01-09 D. Zurn, Add Sublime Text command-line
+alias sublime='/Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl'
 
 # Added 2015-07-28 D. Zurn, add alias for CYGWIN equivalent OPEN command
 #   https://github.com/akiva/dotfiles/blob/7bd2133d9918179cb22c287d8ebbf114e4462544/bash/aliases
@@ -286,7 +282,7 @@ alias chmod='chmod --preserve-root'
 alias chgrp='chgrp --preserve-root'
 
 
-alias lsc='ls --classify --color=always --sort=time --no-group'
+alias ls='ls --classify --color=always --sort=time --no-group'
 alias lsa='ls --color --format=long --human-readable --almost-all --sort=time --no-group --classify'
 alias dztab="cd /Volumes/RGAFAML/LOFTWARE/LABELS/ ; awk -F, -v OFS=\t '{print substr(FILENAME,1,length(FILENAME)-4)}' *.tab >~/Desktop/Tabs-to-FM.txt"
 alias manopen='openman'
@@ -314,11 +310,10 @@ alias isoD='date --rfc-3339=seconds '
 
 zshrc_load_status 'defining functions'
 
-# Modified 2016-07-07 D. Zurn: Added Agile part numbers, also remove AML from basename
 # Modified 2011-10-14 D. Zurn: remove AML check
 # Modified 2011-08-03 D. Zurn: now will check multiple AMLs on the same command line
 # Modified 2010-09-30 D. Zurn: If found, will report existence of AML in "Document Control/AML"
-# Modified 2010-08-20 D. Zurn: To check intermediate directories, will CD as close as it can.
+# Modified 2010-08-20 to check intermediate directories, will CD as close as it can.
 #   ":t:r" will remove the extension and remove the filepath from the filename.
 #   "[(ws: :)1]" will split the argument at the space and select the first word.
 #     This cuts off extra text after the PC code.
@@ -335,56 +330,34 @@ function amlcheck () {
 
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
 
+	if   [[ $OSTYPE = cygwin ]] ; 
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+		myDocControl="/cygdrive/w/Medical/MPAU2/Document Control"
+	elif [[ $OSTYPE =~ ^darwin ]] ; 
+	then
+		myTSD="/Volumes/Tech Services Dept"
+		myDocControl="/Volumes/Document Control"
+	fi
+
 	if [[ -d $myTSD'/Working/Work Instructions/AML - Approved Master Label/' ]] ;
 	then
 		while [[ -n $1 ]] ;
 		do
-			newfile=$1:gs/—/-/
+			newfile=$1
 			# This collects JUST the filename without suffix or path, and takes off "COV" or "ART" at the start of the filename
 			#   ":t:r" will remove the extension and remove the filepath from the filename.
 			#   "[(ws: :)1]" will split the argument at the space and select the first word.
 			#     This cuts off extra text after the PC code.
-			# ##ART# will remove ART from the filename if it appears. Same with ##COV#, ##AML#
-			# %%_actual will remove _actual from the END of the filename if it appears.
-			basename=${${${${${${newfile:t:r}[(ws: :)1]}##ART#}##AML#}##COV#}%%_actual}
-
-			# This collects JUST the Agile number from the basename, and takes off "COV" or "ART" at the start of the filename
-			#   "[(ws:-:)1]" will split the argument at the dash and select the first word to remove the version number
-			#     This cuts off extra text after the PC code.
 			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
-			testAgile=${${${basename}[(ws:-:)1]##PC#}##E#}
-			agileBaseOnly=${${${basename}##PC#}##E#}
-			agileDir='1_Agile Labeling Part Numbers'
-			pcCodeDir='-XXXX'
-
-			if [[ $testAgile[1,3] = "100" ]]; then
-				# It looks like an Agile number...
-				checkme=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$agileDir
-				checkmeTS=$myDocControl'/06_Work_Instructions/AML/'$agileDir
-				newparent=${${basename}[(ws:-:)1]}'/'
-
-			else
-				# Nope, old-style PC- or 40- number
-				checkme=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
-				checkmeTS=$myDocControl'/06_Work_Instructions/AML/'$basename[1,2]'-XXXX'
-				newparent=${${basename[(ws:_:)1]}[1,-2]}'/'
-
-			fi
-
-			# Sample PC Code numbers (pre-Agile)
-			# Tech Services Dept:Working:Work Instructions:AML - Approved Master Label:PC-XXXX:PC-8325-24:PC-8325-24A:AMLPC-8325-24A_Rev101.pdf
-			# Tech Services Dept:Working:Work Instructions:AML - Approved Master Label:40-XXXX:40-7196-51:40-7196-51A:AMLE40-7196-51A.pdf
-
-			# Sample Agile numbers:
-			# Tech Services Dept:Working:Work Instructions:AML - Approved Master Label:1_Agile Labeling Part Numbers:10003921:10003921-002:COV10003921-002.pdf
-			# Tech Services Dept:Working:Work Instructions:AML - Approved Master Label:1_Agile Labeling Part Numbers:10005513:10005513-001:AML10005513-001.pdf
-			# Tech Services Dept:Working:Work Instructions:AML - Approved Master Label:1_Agile Labeling Part Numbers:E10003055:E10003055-001:AMLE10003055-001.pdf
-			# Tech Services Dept:Working:Work Instructions:AML - Approved Master Label:1_Agile Labeling Part Numbers:PC10005533:PC10005533-001:AMLPC10005533-001.pdf
+			basename=${${${${newfile:t:r}[(ws: :)1]}##ART#}##COV#}
+			checkme=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
 
 			if [[ -d $myTSD'/Working/Work Instructions/AML - Approved Master Label/' ]]; then
 				if [[ -d $checkme ]]; then
 					# cd to the proper XXXX upper-level directory
 					cd $checkme
+					newparent=${${basename[(ws:_:)1]}[1,-2]}'/'
 
 					if [[ -d $newparent ]]; then
 						cd $newparent
@@ -399,7 +372,7 @@ function amlcheck () {
 
 				# Failed the checkme test
 				else
-					print $scriptname': Directory '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]': ['$checkme']'
+					print $scriptname': Not a PC code or 40- number: ['$1']'
 				fi
 
 			# Failed the AML directory check
@@ -407,6 +380,26 @@ function amlcheck () {
 				print $scriptname': AML directory not available on "Tech Services Dept/Working/Work Instructions/AML..."'
 			fi
 
+			if [[ -d $myDocControl'/06_Work_Instructions/AML/' ]]; then
+
+				checkmeTS=$myDocControl'/06_Work_Instructions/AML/'$basename[1,2]'-XXXX'
+				if [[ -d $checkmeTS ]]; then
+					# cd to the proper XXXX upper-level directory
+					cd $checkmeTS
+					AMLtoOpenTS='AML'$basename'.pdf'
+
+					if [[ -a $AMLtoOpenTS ]];
+					then
+						print $scriptname': AML exists in Document Control/06_Work_Instructions/AML: ['$AMLtoOpenTS']'
+					else
+						print $scriptname': AML '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]' in Document Control/06_Work_Instructions/AML: ['$AMLtoOpenTS']'
+					fi
+				fi
+
+			# Failed the Tech Services AML directory check
+			else
+				print $scriptname': AML directory not available on "Document Control/06_Work_Instructions/AML/..."'
+			fi
 			shift 1
 		done
 	else
@@ -414,10 +407,9 @@ function amlcheck () {
 	fi
 }
 
-# Modified 2016-09-14 D. Zurn: Changed AMLtoOpen spelling
-# Modified 2010-09-30 D. Zurn: Try to open AML on Document Control/06_Work_Instructions/AML
-# Modified 2010-09-24 D. Zurn: fixed directory problem
-# Modified 2010-08-20 D. Zurn: Remove extra text after PC code
+# Modified 2010-09-30 D. Zurn, Try to open AML on Document Control/06_Work_Instructions/AML
+# Modified 2010-09-24 D. Zurn, fixed directory problem
+# Modified 2010-08-20 D. Zurn, Remove extra text after PC code
 # Written  2010-07-28 D. Zurn
 function amlopen () {
 	if [[ -z $1 ]];
@@ -428,6 +420,14 @@ function amlopen () {
 	fi
 
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
+
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
 
 	newfile=$1
 	# This collects JUST the filename without suffix or path, and takes off "COV" or "ART" at the start of the filename
@@ -446,8 +446,8 @@ function amlopen () {
 					if [[ -d $newdir ]]; then
 						cd $newdir
 						AMLtoOpen='AML'$basename'.pdf'
-						if [[ -f $AMLtoOpen ]]; then
-							print $scriptname': AML in AML folder being opened: ['$AMLtoOpen']'
+						if [[ -a $AMLtoOpen ]]; then
+							print $scriptname': AML in AML folder being opened: ['$AMLtoOpenTS']'
 							open $AMLtoOpen
 						else
 							print $scriptname': AML '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]': ['$basename'.pdf]'
@@ -479,7 +479,7 @@ function amlopen () {
 			cd $checkmeTS
 
 			AMLtoOpenTS='AML'$basename'.pdf'
-			if [[ -f $AMLtoOpenTS ]];
+			if [[ -a $AMLtoOpenTS ]];
 			then
 				print $scriptname': AML in Document Control/06_Work_Instructions/AML being opened: ['$AMLtoOpenTS']'
 				open $AMLtoOpenTS
@@ -508,6 +508,18 @@ function wico () {
 		print 'Usage: '$terminfo[bold]$fg[${(L)RED}]$0' \[WICOorECONum\]' $terminfo[sgr0]
 		print ' Opens WICO or ECO on Document Control corresponding to the text field passed as argument.'
 		return 0
+	fi
+
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+		myDocControl="/cygdrive/w/Medical/MPAU2/Document Control"
+		myTSP="/cygdrive/w/Medical/MPAU/Tech Services Public"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+		myDocControl="/Volumes/Document Control"
+		myTSP="/Volumes/Tech Services Public"
 	fi
 
 	wicoLocation=$myDocControl'/07_Change_ Orders_Completed/'
@@ -558,7 +570,7 @@ function wico () {
 				# Open the WICO/ECO
 				cd $wicoLocation$newfolder
 				WICOtoOpen=$newprefix$basename'.pdf'
-				if [[ -f $WICOtoOpen ]]; then
+				if [[ -a $WICOtoOpen ]]; then
 					print $scriptname': WICO in WICO folder being opened: ['$WICOtoOpen']'
 					open $WICOtoOpen
 				else
@@ -614,7 +626,7 @@ function lls () {
 		myLBL="/Volumes/Labelling"
 	fi
 
-
+	
 	# W:\Medical\MASH\Labelling
 	LLSLocation=$myLBL'/Label Layout Sheets/'
 
@@ -693,7 +705,7 @@ function lls () {
 				# Open the LLS
 				cd $LLSLocation$newfolder
 				LLStoOpen=$basename'.pdf'
-				if [[ -f $LLStoOpen ]]; then
+				if [[ -a $LLStoOpen ]]; then
 					print $scriptname': LLS in LLS folder being opened: ['$LLStoOpen']'
 					open $LLStoOpen
 				else
@@ -730,6 +742,14 @@ function coversheets () {
 
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
 
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
+
 	elif [[ -d $myTSD'/Working/Work Instructions/AML - Approved Master Label/' ]];
 	then
 		while [[ -n $1 ]];
@@ -758,6 +778,14 @@ function coversheets () {
 function amldir () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
 
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
+
 	if [[ -z $1 ]];
 	then
 		print 'Usage: '$terminfo[bold]$fg[${(L)RED}]$0' \[/Volumes/path/to/PC-xxxx-yyyA[_Rev101].pdf\]' $terminfo[sgr0]
@@ -778,78 +806,49 @@ function amldir () {
 	fi
 }
 
-# Modified 2016-07-07 D. Zurn: Added Agile part numbers, also remove AML from basename
-# Modified 2013-11-11 D. Zurn: replace em-dash with regular dash
-# Modified 2012-04-13 D. Zurn: will CD to last valid directory
-# Written  2011-07-20 D. Zurn, adapted from AMLDIR function
+# Written 2011-07-20 D. Zurn, adapted from AMLDIR function
+# Modified 2012-04-13 D. Zurn, will CD to last valid directory
+# Modified 2013-11-11 D. Zurn, replace em-dash with regular dash
 function checkamldir () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
+
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
 
 	if [[ -z $1 ]];
 	then
 		print 'Usage: '$terminfo[bold]$fg[${(L)RED}]$0' \[/Volumes/path/to/PC-xxxx-yyyA[_Rev101].pdf\]' $terminfo[sgr0]
 		print ' Will cd to an existing AML folder. No folders are created, traversed only.'
-		return 0
-	fi
 
-	if [[ -d $myTSD'/Working/Work Instructions/AML - Approved Master Label/' ]];
+	elif [[ -d $myTSD'/Working/Work Instructions/AML - Approved Master Label/' ]];
 	then
 		okdir="";
 		while [[ -n $1 ]];
 		do
 			# Replace em-dash with regular dash
 			newfile=$1:gs/—/-/
-
 			# This collects JUST the filename without suffix or path, and takes off "COV" or "ART" at the start of the filename
 			#   ":t:r" will remove the extension and remove the filepath from the filename.
 			#   "[(ws: :)1]" will split the argument at the space and select the first word.
 			#     This cuts off extra text after the PC code.
-			# ##ART# will remove ART from the filename if it appears. Same with ##COV#, ##AML#
-			# %%_actual will remove _actual from the END of the filename if it appears.
-			basename=${${${${${${newfile:t:r}[(ws: :)1]}##ART#}##AML#}##COV#}%%_actual}
-
-			# This collects JUST the Agile number from the basename, and takes off "COV" or "ART" at the start of the filename
-			#   "[(ws:-:)1]" will split the argument at the dash and select the first word to remove the version number
-			#     This cuts off extra text after the PC code.
 			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
-			testAgile=${${${basename}[(ws:-:)1]##PC#}##E#}
-			agileBaseOnly=${${${basename}##PC#}##E#}
-			agileDir='1_Agile Labeling Part Numbers'
-			pcCodeDir='-XXXX'
-
-			if [[ $testAgile[1,3] = "100" ]]; then
-				# It looks like an Agile number...
-				fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$agileDir
-				newparent=${${basename}[(ws:-:)1]}
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, NOP
-				else
-					basename=$basename'-001'
-				fi
-
-			else
-				# Nope, old-style PC- or 40- number
-				fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
-				newparent=${${basename[(ws:_:)1]}[1,-2]}
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, NOP
-				else
-					basename=$basename'-001'
-				fi
-
-			fi
+			# %%_actual will remove _actual from the END of the filename if it appears.
+			basename=${${${${${newfile:t:r}[(ws: :)1]}##ART#}##COV#}%%_actual}
+			fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
 			cd $fulldir
-			desireddir=$newparent'/'$basename
-
+			desireddir=${${basename[(ws:_:)1]}[1,-2]}'/'$basename
 			if [[ -d $desireddir ]];
 			then
 				# The directory exists, keep saving only the most recent directory
-				okdir=$fulldir'/'$desireddir
+				okdir=$fulldir/$desireddir;
 			else
 				# The directory does NOT exist, so throw an error message
-				print $scriptname': [Dir '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]' for:] '$newfile' or '$basename
+				print $scriptname': [Dir '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]' for:] '$newfile
 			fi
 			shift 1
 		done
@@ -870,69 +869,51 @@ alias c='checkamldir'
 function openart () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
 
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
+
 	if [[ -z $1 ]];
 	then
 		print 'Usage: '$terminfo[bold]$fg[${(L)RED}]$0' \[/path/to/PC-xxxx-yyyA[_Rev101].pdf\]' $terminfo[sgr0]
 		print ' Will cd to an existing AML folder and open the ART file if found. No folders are created, traversed only.'
+
+#	elif [[ $# -ge 10]];
+#	then
+#		print $scriptname': Total '$#' files. Do you want to continue [Y,N]?'
+#		if ( read -q );
+#		then
+#		else
+#			return 0;
+#		fi
 
 	elif [[ -d $myTSD'/Working/Work Instructions/AML - Approved Master Label/' ]];
 	then
 		okdir="";
 		while [[ -n $1 ]];
 		do
-			# Replace em-dash with regular dash
-			newfile=$1:gs/—/-/
-
+			newfile=$1
 			# This collects JUST the filename without suffix or path, and takes off "COV" or "ART" at the start of the filename
 			#   ":t:r" will remove the extension and remove the filepath from the filename.
 			#   "[(ws: :)1]" will split the argument at the space and select the first word.
 			#     This cuts off extra text after the PC code.
-			# ##ART# will remove ART from the filename if it appears. Same with ##COV#, ##AML#
-			# %%_actual will remove _actual from the END of the filename if it appears.
-			basename=${${${${${${newfile:t:r}[(ws: :)1]}##ART#}##AML#}##COV#}%%_actual}
-
-			# This collects JUST the Agile number from the basename, and takes off "COV" or "ART" at the start of the filename
-			#   "[(ws:-:)1]" will split the argument at the dash and select the first word to remove the version number
-			#     This cuts off extra text after the PC code.
 			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
-			testAgile=${${${basename}[(ws:-:)1]##PC#}##E#}
-			agileBaseOnly=${${${basename}##PC#}##E#}
-			agileDir='1_Agile Labeling Part Numbers'
-			pcCodeDir='-XXXX'
-
-			if [[ $testAgile[1,3] = "100" ]]; then
-				# It looks like an Agile number...
-				fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$agileDir
-				newparent=${${basename}[(ws:-:)1]}
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, continue
-				else
-					basename=$basename'-001'
-				fi
-
-			else
-				# Nope, old-style PC- or 40- number
-				fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
-				newparent=${${basename[(ws:_:)1]}[1,-2]}
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, continue
-				else
-					basename=$basename'-001'
-				fi
-
-			fi
+			# %%_actual will remove _actual from the END of the filename if it appears.
+			basename=${${${${${newfile:t:r}[(ws: :)1]}##ART#}##COV#}%%_actual}
+			fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
 			cd $fulldir
-			desireddir=$newparent'/'$basename
-
+			desireddir=${${basename[(ws:_:)1]}[1,-2]}'/'$basename
 			if [[ -d $desireddir ]];
 			then
 				# The directory exists, keep saving only the most recent directory
-				okdir=$fulldir'/'$desireddir;
+				okdir=$fulldir/$desireddir;
 			else
 				# The directory does NOT exist, so throw an error message
-				print $scriptname': [Dir '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]' for:] '$newfile' or '$basename
+				print $scriptname': [Dir '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]' for:] '$newfile
 			fi
 			if [[ $okdir != "" ]];
 			then
@@ -940,12 +921,12 @@ function openart () {
 				cd $okdir;
 
 				ARTtoOpenTS='ART'$basename'.pdf'
-				if [[ -f $ARTtoOpenTS ]];
+				if [[ -a $ARTtoOpenTS ]];
 				then
-					print $scriptname': ART in Document Control/06_Work_Instructions/AML being opened: ['$ARTtoOpenTS']'
+					print $scriptname': AML in Document Control/06_Work_Instructions/AML being opened: ['$ARTtoOpenTS']'
 					open $ARTtoOpenTS
 				else
-					print $scriptname': ART '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]': ['$ARTtoOpenTS']'
+					print $scriptname': AML '$terminfo[bold]$fg[${(L)RED}]'not found'$terminfo[sgr0]': ['$ARTtoOpenTS']'
 				fi
 			fi
 			shift 1
@@ -1004,24 +985,6 @@ function openart () {
 #	fi
 #}
 
-# FIXME, What went wrong:
-#		1. Didn't recognize AS doc, thought it was a PC code.
-#		2. Saved to LOCAL directory
-#		3. Added "ART" to AS Document name
-
-# └─(16:44:%)──▶  artfiles /Volumes/QAR\ Mac/Labeling/Project\ Folders/Disposables/Anti-Siphon\ Valve\ new\ pkg\ 2016-10/AMLPC10009629-001.pdf
-# artfiles: Not an Agile code, PC code or 40- number:
-#    [/Volumes/QAR Mac/Labeling/Project Folders/Disposables/Anti-Siphon Valve new pkg 2016-10/AMLPC10009629-001.pdf]
-# ┌─(dzurnlocal@MMSPMDAZ:s000)──────────────────────────────────────────────────────────────────────────────────(~)─┐
-# └─(16:44:%)──▶  amlart /Volumes/QAR\ Mac/Labeling/Project\ Folders/Disposables/Anti-Siphon\ Valve\ new\ pkg\ 2016-10/ASPC10009629-001.pdf
-# amlart:cd:66: no such file or directory:
-#    /Volumes/Tech Services Dept/Working/Work Instructions/AML - Approved Master Label/AS-XXXX
-# mkdir: created directory 'ASPC10009629-00'
-# mkdir: created directory 'ASPC10009629-00/ASPC10009629-001'
-#  amlart: ART being copied:     [ARTASPC10009629-001.pdf]
-# ┌─(dzurnlocal@MMSPMDAZ:s000)─────────────────────────────────────────────────(~/ASPC10009629-00/ASPC10009629-001)─┐
-
-# Modified 2017-03-15 D. Zurn: Now handles Agile numbers correctly
 # Modified 2011-06-07 D. Zurn: Help text updated
 # Modified 2010-09-29 D. Zurn: Gives option of overwriting using "read -q" which inputs 1 character only
 # Modified 2010-08-02 D. Zurn: AMLART now reports if ART file exists instead of overwriting.
@@ -1029,6 +992,14 @@ function openart () {
 # Modified 2009-06-25 D. Zurn: Fixed cd command in AMLDIR and AMLART to follow basename definition!
 function amlart () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
+
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept" 
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept" 
+	fi
 
 	if [[ -z $1 ]];
 	then
@@ -1043,9 +1014,7 @@ function amlart () {
 	then
 		while [[ -n $1 ]];
 		do
-			# Replace em-dash with regular dash
-			newfile=$1:gs/—/-/
-
+			newfile=$1
 			# This collects JUST the filename without suffix or path, and takes off "COV" or "ART" at the start of the filename
 			#   ":t:r" will remove the extension and remove the filepath from the filename.
 			#   "[(ws: :)1]" will split the argument at the space and select the first word.
@@ -1053,64 +1022,25 @@ function amlart () {
 			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
 			# %%_actual will remove _actual from the END of the filename if it appears.
 			basename=${${${${${newfile:t:r}[(ws: :)1]}##ART#}##COV#}%%_actual}
-
-			# This collects JUST the Agile number from the basename, and takes off "COV" or "ART" at the start of the filename
-			#   "[(ws:-:)1]" will split the argument at the dash and select the first word to remove the version number
-			#     This cuts off extra text after the PC code.
-			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
-			testAgile=${${${basename}[(ws:-:)1]##PC#}##E#}
-			agileBaseOnly=${${${basename}##PC#}##E#}
-			agileDir='1_Agile Labeling Part Numbers'
-			pcCodeDir='-XXXX'
-
-			if [[ $testAgile[1,3] = "100" ]]; then
-				# It looks like an Agile number...
-				fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$agileDir
-				newparent=${${basename}[(ws:-:)1]}
-				newdir=$newparent'/'$basename
-
-				# Why checking if Parent directory exists? It would be created anyway...
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, NOP
-				else
-					# FIXME: This makes no sense, unless parent directory was missing due to lack of -001
-					# basename=$basename'-001'
-				fi
-
-			else
-				# Nope, old-style PC- or 40- number
-				fulldir=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
-				newparent=${${basename[(ws:_:)1]}[1,-2]}
-				newdir=${${basename[(ws:_:)1]}[1,-2]}'/'$basename
-
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, NOP
-				else
-					# FIXME: This makes no sense, unless parent directory was missing due to lack of -001
-					# basename=$basename'-001'
-				fi
-			fi
-
-			cd $fulldir
+			cd $myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
+			newdir=${${basename[(ws:_:)1]}[1,-2]}'/'$basename
 			mkdir --verbose --parents $newdir
 			cd $newdir
 			ARTtoOpen='ART'$basename'.pdf'
-			if [[ -f $ARTtoOpen ]];
+			if [[ -a $ARTtoOpen ]];
 			then
 				# Ask user if we should skip or overwrite
 				print -n '['$ARTtoOpen' exists, overwrite? Y/N]: '
 				if ( read -q );
 				then
 					cp --preserve $newfile $ARTtoOpen
-					print ' '$scriptname': ART being copied:     ['$ARTtoOpen']'
+					print $scriptname': ART being copied:     ['$ARTtoOpen']'
 				else
-					print ' '$scriptname': ART exists, skipping: ['$ARTtoOpen']'
+					print $scriptname': ART exists, skipping: ['$ARTtoOpen']'
 				fi
 			else
 				cp --interactive --preserve $newfile $ARTtoOpen
-				print ' '$scriptname': ART being copied:     ['$ARTtoOpen']'
+				print $scriptname': ART being copied:     ['$ARTtoOpen']'
 			fi
 			shift 1
 		done
@@ -1119,11 +1049,18 @@ function amlart () {
 	fi
 }
 
-# FIXME 2017-03-06: Need to handle Agile numbers correctly!
 # Written 2010-08-19 D. Zurn
 # cp command added "--recursive" flag, 2011-09-14 D. Zurn
 function artfiles () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
+
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
 
 	if [[ -z $1 ]];
 	then
@@ -1136,9 +1073,7 @@ function artfiles () {
 	then
 		while [[ -n $1 ]];
 		do
-			# Replace em-dash with regular dash
-			newfile=$1:gs/—/-/
-
+			newfile=$1
 			# This collects JUST the filename without suffix or path, and takes off "COV" or "ART" at the start of the filename
 			#   ":t:r" will remove the extension and remove the filepath from the filename.
 			#   "[(ws: :)1]" will split the argument at the space and select the first word.
@@ -1146,42 +1081,7 @@ function artfiles () {
 			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
 			# %%_actual will remove _actual from the END of the filename if it appears.
 			basename=${${${${${newfile:t:r}[(ws: :)1]}##ART#}##COV#}%%_actual}
-
-			# This collects JUST the Agile number from the basename, and takes off "COV" or "ART" at the start of the filename
-			#   "[(ws:-:)1]" will split the argument at the dash and select the first word to remove the version number
-			#     This cuts off extra text after the PC code.
-			# ##ART# will remove ART from the filename if it appears. Same with ##COV#.
-			testAgile=${${${basename}[(ws:-:)1]##PC#}##E#}
-			agileBaseOnly=${${${basename}##PC#}##E#}
-			agileDir='1_Agile Labeling Part Numbers'
-			pcCodeDir='-XXXX'
-
-			if [[ $testAgile[1,3] = "100" ]]; then
-				# It looks like an Agile number...
-				checkme=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$agileDir
-				newparent=${${basename}[(ws:-:)1]}
-				newdir=$newparent'/'$basename
-
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, NOP
-				else
-					basename=$basename'-001'
-				fi
-
-			else
-				# Nope, old-style PC- or 40- number
-				checkme=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
-				newparent=${${basename[(ws:_:)1]}[1,-2]}
-				newdir=${${basename[(ws:_:)1]}[1,-2]}'/'$basename
-
-				if [[ -d $fulldir'/'$newparent ]];
-				then
-					# The parent directory exists, NOP
-				else
-					basename=$basename'-001'
-				fi
-			fi
+			checkme=$myTSD'/Working/Work Instructions/AML - Approved Master Label/'$basename[1,2]'-XXXX'
 
 			if [[ -d $checkme ]];
 			then
@@ -1189,6 +1089,7 @@ function artfiles () {
 				cd $checkme
 				#  "(ws:_:)" will remove _Rev101, which is not used for the first directory.
 				#  "[1,-2]" removes the revision
+				newdir=${${basename[(ws:_:)1]}[1,-2]}'/'$basename
 				if [[ -d $newdir ]];
 				then
 					cd $newdir
@@ -1201,7 +1102,7 @@ function artfiles () {
 				fi
 			# Failed the checkme test
 			else
-				print $scriptname': Not an Agile code, PC code or 40- number: ['$1']'
+				print $scriptname': Not a PC code or 40- number: ['$1']'
 			fi
 			shift 1
 		done
@@ -1214,6 +1115,14 @@ function artfiles () {
 # Written 2010-09-17 D. Zurn
 function openAMLFolder () {
 	scriptname=$terminfo[bold]$fg[${(L)RED}]$0:t:r$terminfo[sgr0]
+
+	if   [[ $OSTYPE = cygwin ]] ;
+	then
+		myTSD="/cygdrive/w/Medical/MPAU/Tech Services Dept"
+	elif [[ $OSTYPE =~ ^darwin ]] ;
+	then
+		myTSD="/Volumes/Tech Services Dept"
+	fi
 
 	if [[ -z $1 ]];
 	then
@@ -1392,7 +1301,8 @@ echo "\n"
 ## echo "\033[0;32m"' / /_ ___) |  _  |'"\033[0m"
 ## echo "\033[0;32m"'|____|____/|_| |_|'"\033[0m"
 ## echo "\n"
-# figlet -o -f isometric2 zsh
+
+## figlet -o -f isometric2 zsh
 ## echo "\033[0;32m"'     ___         ___         ___      '"\033[0m"
 ## echo "\033[0;32m"'    /\__\       /\__\       /\  \     '"\033[0m"
 ## echo "\033[0;32m"'   /::|  |     /:/ _/_      \:\  \    '"\033[0m"
@@ -1405,28 +1315,21 @@ echo "\n"
 ## echo "\033[0;32m"'    |:/  /      /:/  /     \:\__\     '"\033[0m"
 ## echo "\033[0;32m"'    |/__/       \/__/       \/__/     '"\033[0m"
 
-##  echo "\033[0;32m_________/\\\\\\\\\\\\\\\______/\\\\\\\\\\\_____/\\\________/\\\_____/\\\\\\\\\_____________/\\\\\\\\\_        \033[0m"
-##  echo "\033[0;32m ________\////////////\\\_____/\\\/////////\\\__\/\\\_______\/\\\___/\\\///////\\\________/\\\////////__       \033[0m"
-##  echo "\033[0;32m  __________________/\\\/_____\//\\\______\///___\/\\\_______\/\\\__\/\\\_____\/\\\______/\\\/___________      \033[0m"
-##  echo "\033[0;32m   ________________/\\\/________\////\\\__________\/\\\\\\\\\\\\\\\__\/\\\\\\\\\\\/______/\\\_____________     \033[0m"
-##  echo "\033[0;32m    ______________/\\\/_____________\////\\\_______\/\\\/////////\\\__\/\\\//////\\\_____\/\\\_____________    \033[0m"
-##  echo "\033[0;32m     ____________/\\\/__________________\////\\\____\/\\\_______\/\\\__\/\\\____\//\\\____\//\\\____________   \033[0m"
-##  echo "\033[0;32m      __________/\\\/_____________/\\\______\//\\\___\/\\\_______\/\\\__\/\\\_____\//\\\____\///\\\__________  \033[0m"
-##  echo "\033[0;32m       __/\\\___/\\\\\\\\\\\\\\\__\///\\\\\\\\\\\/____\/\\\_______\/\\\__\/\\\______\//\\\_____\////\\\\\\\\\_ \033[0m"
-##  echo "\033[0;32m        _\///___\///////////////_____\///////////______\///________\///___\///________\///_________\/////////__\033[0m"
-
-## echo "\033[0;32m"'__/\\\\\\\\\\\\_____/\\\\\\\\\\\\\\\___________________________________________        \033[0m"
-## echo "\033[0;32m"' _\/\\\////////\\\__\////////////\\\____________________________________________       \033[0m"
-## echo "\033[0;32m"'  _\/\\\______\//\\\___________/\\\/_____________________________________________      \033[0m"
-## echo "\033[0;32m"'   _\/\\\_______\/\\\_________/\\\/______/\\\____/\\\__/\\/\\\\\\\___/\\/\\\\\\___     \033[0m"
-## echo "\033[0;32m"'    _\/\\\_______\/\\\_______/\\\/_______\/\\\___\/\\\_\/\\\/////\\\_\/\\\////\\\__    \033[0m"
-## echo "\033[0;32m"'     _\/\\\_______\/\\\_____/\\\/_________\/\\\___\/\\\_\/\\\___\///__\/\\\__\//\\\_   \033[0m"
-## echo "\033[0;32m"'      _\/\\\_______/\\\____/\\\/___________\/\\\___\/\\\_\/\\\_________\/\\\___\/\\\_  \033[0m"
-## echo "\033[0;32m"'       _\/\\\\\\\\\\\\/____/\\\\\\\\\\\\\\\_\//\\\\\\\\\__\/\\\_________\/\\\___\/\\\_ \033[0m"
-## echo "\033[0;32m"'        _\////////////_____\///////////////___\/////////___\///__________\///____\///__\033[0m"
-
+## figlet -f s-relief -c -w 132 .zshrc
+## echo "\033[0;32m_________/\\\\\\\\\\\\\\\______/\\\\\\\\\\\_____/\\\________/\\\_____/\\\\\\\\\_____________/\\\\\\\\\_        \033[0m"
+## echo "\033[0;32m ________\////////////\\\_____/\\\/////////\\\__\/\\\_______\/\\\___/\\\///////\\\________/\\\////////__       \033[0m"
+## echo "\033[0;32m  __________________/\\\/_____\//\\\______\///___\/\\\_______\/\\\__\/\\\_____\/\\\______/\\\/___________      \033[0m"
+## echo "\033[0;32m   ________________/\\\/________\////\\\__________\/\\\\\\\\\\\\\\\__\/\\\\\\\\\\\/______/\\\_____________     \033[0m"
+## echo "\033[0;32m    ______________/\\\/_____________\////\\\_______\/\\\/////////\\\__\/\\\//////\\\_____\/\\\_____________    \033[0m"
+## echo "\033[0;32m     ____________/\\\/__________________\////\\\____\/\\\_______\/\\\__\/\\\____\//\\\____\//\\\____________   \033[0m"
+## echo "\033[0;32m      __________/\\\/_____________/\\\______\//\\\___\/\\\_______\/\\\__\/\\\_____\//\\\____\///\\\__________  \033[0m"
+## echo "\033[0;32m       __/\\\___/\\\\\\\\\\\\\\\__\///\\\\\\\\\\\/____\/\\\_______\/\\\__\/\\\______\//\\\_____\////\\\\\\\\\_ \033[0m"
+## echo "\033[0;32m        _\///___\///////////////_____\///////////______\///________\///___\///________\///_________\/////////__\033[0m"
+## 
 
 figlet -f s-relief -c -w 132 DZurn
+
+## figlet -f s-relief -c -w 132 .zshrc
 echo "\n"
 
 # {{{ Echo my TODO file
@@ -1435,9 +1338,9 @@ echo "\n"
 if   [[ $OSTYPE = cygwin ]] ;
 then
 	cat /cygdrive/c/Users/mpaudzurn/Dropbox/Geeky/Smiths\ Medical/TODO.txt
-elif [[ $OSTYPE =~ ^darwin ]] ;
-then
-	cat ~/Dropbox/Geeky/Smiths\ Medical/TODO.txt
+# elif [[ $OSTYPE =~ ^darwin ]] ;
+# then
+#	cat ~/Dropbox/Geeky/Smiths\ Medical/TODO.txt
 fi
 
 # }}}
