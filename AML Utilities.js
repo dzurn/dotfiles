@@ -1,28 +1,25 @@
 /**
  * @fileoverview
  * AMLUtilities.js
- *  is Javascript code intended for use with Adobe Acrobat Professional version 6 through XI.      <br>
- * Copy this file into the Javascripts folder in the Acrobat User Data area of your               <br>
+ *  is Javascript code intended for use with Adobe Acrobat Professional version 6 through XI.     <br>
+ * Copy this file into the JavaScripts folder in the Acrobat User Data area of your               <br>
  * hard disk, then restart Acrobat.                                                               <br>
  * <p>
- * Written and maintained by Darryl Zurn, darryl.zurn@smiths-medical.com                          <br>
+ * Written and maintained by Darryl Zurn, daz-aml@zzzurn.com                                      <br>
  * <p>
  * *** This documentation is designed to be generated automatically by JSDoc (see below) ***      <br>
  * <p>
  * The latest version can be found at                                                             <br>
- *    Tech Services Dept:Working:AML Test - Darryl:References:JavaScripts                         <br>
- *    for Acrobat:AML Utilities.js                                                                <br>
- * or at
- *    //MEDICAL.SMGPPLC.COM/DFS/work/MMSP Work_Files/Tech Services Dept/Working/                <br>
- *    AML Test - Darryl\References\JavaScripts for Acrobat\AML Utilities.js                       <br>
+ * **FIXME**   Tech Services Dept:Working:AML Test - Darryl:References:JavaScripts                <br>
  * <p>
- * Put a shortcut to this file (for Acrobat X, copy the file) into Javascripts folder:            <br>
+ * Put a shortcut to this file (for Acrobat X, copy the file) into JavaScripts folder:            <br>
  * <code> app.getPath("user","javascript")                                                        <br>
  * &nbsp;&nbsp;   &rArr; ~/Library/Application Support/Adobe/Acrobat/10.0/JavaScripts/            <br>
  * &nbsp;&nbsp;   &rArr; /C/Documents and Settings/<MPAUUsername>/Application Data/Adobe/Acrobat/10.0/JavaScripts/
  * </code>
  * <p>
  * <code>
+ * 2022-12-18 FIXME: Everything :-O 
  * 2017-04-21 FIXME: Somehow Agile # had saved files to Desktop instead of network shares         <br>
  *                   ASPC10009629-00 -> ASPC10009629-001 -> ARTASPC10009629-001.pdf               <br>
  * 2014-07-30 FIXME: Multiple security violations due to saving and opening PDFs                  <br>
@@ -34,6 +31,7 @@
  * 2008-05-13 TODO:  Second "pagelabels" help appears during coversheet split                     <br>
  * 2008-05-13 FIXME: Don't ask to save a read-only file!                                          <br>
  * <p>
+ * 2022-12-18 D. Zurn: Found at my Git repository, finally! Let's see what works                  <br>
  * 2017-04-05 D. Zurn: Added Agile to smedPNRegEx (above), added Agile button                     <br>
  * 2017-02-28 D. Zurn: Added local Dropbox location to SplitFolders                               <br>
  * 2017-02-27 D. Zurn: Refreshed server locations                                                 <br>
@@ -614,7 +612,7 @@ function smed_addUniqueField(thisDoc, myPage, myPrefix, myRegEx, myValue) {
 
 
 /**
- * Sets page labels. Javascripts for Acrobat cannot set a Page Label
+ * Sets page labels. JavaScript for Acrobat cannot set a Page Label
  * (aka a page number) with a prefix only, there must be a
  * number style. (Doing it by hand you can select "none"
  * but that doesn't work in JavaScript.)
